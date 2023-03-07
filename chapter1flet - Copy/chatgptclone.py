@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-openai.api_key = "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"
+openai.api_key = "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"
 
 bg = '#444654'
 fg = '#202123'
