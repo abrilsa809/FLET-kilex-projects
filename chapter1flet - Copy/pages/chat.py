@@ -1,724 +1,1041 @@
-import pyttsx3
 from flet import *
-import flet as ft
-import math
-from time import *
 import googletrans
+import flet as ft
+
+from plyer import notification
+
+from time import sleep
 import openai
-import datetime
-from plyer import *
-import plyer
-openai.api_key = "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"
-
-
-class Home(Container):
-		def __init__(self, page):
-				
-				super().__init__()
-				
-				self.page = page
-				
-				self.alignment = alignment.Alignment(x=0, y=-1)
-				self.bgcolor = '#1E0A59'
-				self.border_radius = 20
-				self.expand = True
-				self.width1 = 250
-				self.translator = googletrans.Translator()
-				self.width2 = None
-				self.send_button =  IconButton(
-																													icon=ft.icons.SEND_ROUNDED,
-																														icon_color="grey",
-																															tooltip="send", 
-																														on_click=self.send,
-																														disabled=True
-																											)
-				self.status = ft.Text("Online",
-															color="green",font_family='Poppins BlackItalic')
-				self.question = None
-				self.drop_down_language = ft.Dropdown(
-
-						height=90,
-						border_radius=10,
-						border_color="blue",
-						hint_text="Choose languages",
-						bgcolor="yellow",
-						autofocus=True,
-						border_width=2,
-						focused_border_color="blue",
-						helper_style=TextStyle(
-								color="white",
-								weight="w600"
-
-						),)
-				
-
-				self.audio =  ft.Audio(
-				src="https://luan.xyz/files/audio/ambient_c_motion.mp3", 
-		)   
-			 
-				self.about = ft.Text(
-						value="Get answers to your questions as fast as possible",
-						color="#e3dbdb",
-						size=10,
-
-				)
-				self.fast_answer =  ft.Text(value="fast Answer",
-																																							color="white",
-																																							size=20,)
-
-				self.langage = "en"
-			 
-
-				self.drop_down_language = ft.Dropdown(
-
-						height=90,
-						border_radius=10,
-						border_color="blue",
-						hint_text="Choose languages",
-						bgcolor="yellow",
-						autofocus=True,
-						border_width=2,
-						focused_border_color="blue",
-						helper_style=TextStyle(
-								color="white",
-								weight="w600"
-
-						),
-						prefix_icon=ft.icons.LANGUAGE_ROUNDED,
-						on_change=self.language_changed,
-
-
-
-						options=[
-								ft.dropdown.Option("English"),
-								ft.dropdown.Option("Swahili"),
-								ft.dropdown.Option("Afrikaans"),
-								ft.dropdown.Option("Albanian"),
-								ft.dropdown.Option("Italian"),
-								ft.dropdown.Option("Arabic"),
-								ft.dropdown.Option("Japanese"),
-								ft.dropdown.Option("Azerbaijani"),
-								ft.dropdown.Option("Kannada"),
-								ft.dropdown.Option("Basque"),
-								ft.dropdown.Option("Korean"),
-								ft.dropdown.Option("Bengali"),
-								ft.dropdown.Option("Latin"),
-								ft.dropdown.Option("Belarusian"),
-								ft.dropdown.Option("Latvian"),
-								ft.dropdown.Option("Bulgarian"),
-								ft.dropdown.Option("Lithuanian"),
-								ft.dropdown.Option("Catalan"),
-								ft.dropdown.Option("Macedonian"),
-								ft.dropdown.Option("Chinese Simplified"),
-								ft.dropdown.Option("Malay"),
-								ft.dropdown.Option("Malay"),
-								ft.dropdown.Option("Maltese"),
-								ft.dropdown.Option("Croatian"),
-								ft.dropdown.Option("Norwegian"),
-								ft.dropdown.Option("Czech"),
-								ft.dropdown.Option("Persian"),
-								ft.dropdown.Option("Danish"),
-								ft.dropdown.Option("Polish"),
-								ft.dropdown.Option("Dutch"),
-								ft.dropdown.Option("Portuguese"),
-								ft.dropdown.Option("Romanian"),
-								ft.dropdown.Option("Esperanto"),
-								ft.dropdown.Option("Russian"),
-								ft.dropdown.Option("Estonian"),
-								ft.dropdown.Option("Serbian"),
-								ft.dropdown.Option("Filipino"),
-								ft.dropdown.Option("Slovak"),
-								ft.dropdown.Option("Finnish"),
-								ft.dropdown.Option("Slovenian"),
-								ft.dropdown.Option("French"),
-								ft.dropdown.Option("Spanish"),
-								ft.dropdown.Option("Galician"),
-								ft.dropdown.Option("Georgian"),
-								ft.dropdown.Option("Swedish"),
-								ft.dropdown.Option("German"),
-								ft.dropdown.Option("Tamil"),
-								ft.dropdown.Option("Greek"),
-								ft.dropdown.Option("Telugu"),
-								ft.dropdown.Option("Gujarati"),
-								ft.dropdown.Option("Thai"),
-								ft.dropdown.Option("Haitian Creole"),
-								ft.dropdown.Option("Turkish"),
-								ft.dropdown.Option("Hebrew"),
-								ft.dropdown.Option("Ukrainian"),
-								ft.dropdown.Option("Hindi"),
-								ft.dropdown.Option("Urdu"),
-								ft.dropdown.Option("Hungarian"),
-								ft.dropdown.Option("Vietnamese"),
-								ft.dropdown.Option("Icelandic"),
-								ft.dropdown.Option("Welsh"),
-								ft.dropdown.Option("Indonesian"),
-								ft.dropdown.Option("Yiddish"),
-
-						],
-				)
-				self.answer = ""
-
-				self.clear_dialong = ft.AlertDialog(
-						modal=True,
-						
-					 
-						title=ft.Text("Please confirm"),
-						content=ft.Column(scroll="auto",controls=[
-						
-						
-				
-						]),
-						actions=[
-								ft.TextButton("Yes", on_click=self.clear_chats),
-								ft.TextButton("No", on_click=self.close_clear_dlg),
-						],
-						actions_alignment=ft.MainAxisAlignment.CENTER,
-
-				)
-
-				self.message_container = None
-				self.allmsg = ft.Column(
-						alignment="start",
-						spacing=0,
-						controls=[
-								ft.Text("...")
-						]
-				)
-
-				self.message = ft.TextField(
-						expand=True,
-						autofocus=True,
-						border_color="transparent",
-						border_radius=30,
-						hint_text="message",
-						on_submit=self.send,
-						on_change=self.enable_send_button,
-						
-				)
-
-				self.content = (
-						ft.Column(
-
-								expand=True,
-								alignment="spaceBetween",
-								spacing=0,
-								controls=[
-										Container(
-
-												height=60,
-												bgcolor='#0C029B',
-												border_radius=border_radius.only(10, 10, 0, 0),
-
-												content=(
-														ft.Column(
-																alignment=alignment.Alignment(x=0, y=0),
-																controls=[
-																		ft.Row(alignment="start",
-																					 height=45,
-																					 controls=[IconButton(
-																							 icon=ft.icons.ARROW_BACK_OUTLINED,
-																							 tooltip="Back",
-																							 icon_color="white",
-																							 on_click= self.homepage,
-																							 
-																					 ), ft.CircleAvatar(
-																							 foreground_image_url="https://cdn-icons-png.flaticon.com/512/1698/1698535.png"),
-																							 ft.Row(alignment="center",
-																											expand=True,
-
-																											controls=[ft.Container(
-																													content=(ft.Column(
-																															height=50,
-																															spacing=0,
-																															alignment=alignment.Alignment(
-																																	x=0, y=0),
-																															controls=[ft.Column(
-																																	spacing=2,
-																																	controls=[
-																																		 self.fast_answer,
-																																			self.status
-																																	]
-																															)
-
-																															]
-																													)),)]),
-																							 ft.Row(
-																							 alignment="spaceBetween",
-																							 height=50,
-
-																							 controls=[
-																									 IconButton(
-																											 icon=ft.icons.SUPPORT_AGENT_OUTLINED,
-																											 tooltip="support agent",
-																											 icon_color="white",
-																											 on_click=lambda e: e.page.launch_url("https://wa.link/wz1vl2")),
-
-
-																									 ft.PopupMenuButton(
-																											 items=[
-																													 ft.PopupMenuItem(
-																															 icon=ft.icons.CLEAR_ALL_ROUNDED, text="Clear chats", on_click=self.open_clear_dlg),
-																													 ft.PopupMenuItem(
-																															 icon=ft.icons.LANGUAGE_ROUNDED, text="Change language", on_click=self.change_langage),
-																													 ft.PopupMenuItem(
-																															 icon=ft.icons.SHARE_OUTLINED, text="Share", on_click=self.Check_battery),
-
-																											 ]
-
-																									 )]
-																					 )
-																					 ])
-
-																]
-														)
-												)
-
-										), ft.Container(
-												height=15,
-												bgcolor="#2b2b2b00",
-
-												border_radius=border_radius.only(0, 0, 10, 10),
-												content=(
-														ft.Row(
-																alignment=ft.MainAxisAlignment.CENTER,
-																controls=[
-self.about                                ]
-														)
-												)
-
-
-
-										),
-										Container(
-												expand=True,
-												bgcolor='#1E0A59',
-
-
-												content=(
-														ft.ListView(
-																auto_scroll=True,
-																
-																
-																controls=[
-																		self.allmsg
-																]
-														)
-												)
-										),
-										Container(height=60,
-															bgcolor='#0C029B',
-															border_radius=30,
-															content=(ft.Row(alignment="spaceBetween",
-																							controls=[ft.Container(
-																									width=55,
-																									height=55,
-																									border_radius=20,
-																									bgcolor="blue",
-
-																									content=(
-																											IconButton(
-																												icon=ft.icons.MIC_ROUNDED, icon_color="white", on_click=self.speak)
-
-																									)
-																							), self.message,
-																							 ft.Container(
-																									width=55,
-																									height=55,
-																									border_radius=55/2,
-																									bgcolor="blue",
-
-																									content=(
-																											self.send_button
-
-																									)
-																							)
-
-																								 
-																							]))
-															),
-
-								]
-						)
-				)
-
-		def send(self, e):
-				self.send_button.disabled = True
-				self.send_button.icon_color =  'grey'
-				self.send_button.update()
-				self.page.update()
-				time = datetime.datetime.now()
-				my_time = time.strftime("%H:%M:%S")
-				translator = googletrans.Translator()
-
-				question = self.message.value
-				self.question = question
-
-				length = len(question)
-
-				self.message.value = ""
-				if length >= 40:
-
-						self.width1 = 250
-				else:
-						self.width1 = None
-				self.message_container = ft.Row(controls=[ft.Container(
-						padding=8,
-						width=self.width1,
-						gradient=ft.LinearGradient(
-								begin=ft.alignment.top_center,
-								end=ft.alignment.bottom_center,
-								colors=[
-										"blue", "#0032FF"],
-						),
-
-						border_radius=border_radius.only(20, 0, 20, 20),
-
-						content=(ft.Text(self.question, selectable=True))),
-
-				])
-				self.allmsg.controls.append(
-						ft.Row(
-								alignment="end",
-								controls=[
-										ft.CircleAvatar(
-												foreground_image_url='https://i.pinimg.com/originals/12/eb/6d/12eb6d9a47e880e74c60987729c64b00.jpg',
-												radius=15
-										)
-								]
-						)
-				)
-				self.allmsg.controls.append(
-						ft.Row(alignment="end",
-
-									 controls=[ft.Container(
-											 margin=margin.only(0, 0, 30, 0),
-											 content=(self.message_container)
-									 )]),)
-				self.message.update()
-				
-				sleep(0.1)
-
-				self.allmsg.update()
-				question1 = translator.translate(question, dest="en")
-				question = question1.text
-
-			
-				response = openai.Completion.create(
-						model="text-davinci-003",
-						prompt=question,
-						temperature=0.7,
-						max_tokens=3000,
-						top_p=1,
-						frequency_penalty=0,
-						presence_penalty=0,
-				)
-
-				answer = response.choices[0].text
-				answer = answer[2:]
-				self.answer = answer
-				result = translator.translate(answer, dest=self.langage)
-				answer = result.text
-				length2 = len(answer)
-
-				if length2 >= 40:
-						self.width2 = 280
-				else:
-						self.width2 = None
-
-				self.allmsg.update()
-				self.allmsg.controls.append(
-						ft.Row(
-								alignment="start",
-								controls=[
-										ft.CircleAvatar(
-												foreground_image_url='https://cdn-icons-png.flaticon.com/512/1698/1698535.png',
-												radius=15
-										)
-								]
-						)
-				)
-				bot =       ft.Text(value='', selectable=True)
-				self.allmsg.controls.append(
-						ft.Row(alignment="start",
-
-									 controls=[ft.Container(
-											 margin=margin.only(30, 0, 0, 0),
-											 
-									 
-											 content=(
-													 ft.Row(controls=[ft.Container(
-															 padding=8,
-															 width=self.width2,
-															 gradient=ft.LinearGradient(
-																	 begin=ft.alignment.top_center,
-																	 end=ft.alignment.bottom_center,
-																	 colors=[
-																			 "#A400FF", "#7D00FF"],
-															 ),
-															 border_radius=border_radius.only(0, 20, 20, 20),
-
-															 content=(ft.Column(
-																	 controls=[
-						Text("@kilex",
-								color="black",
-								italic=True
-								),
-																 bot,
-																			 ft.Row(alignment=ft.MainAxisAlignment.END,
-																							controls=[])]))),
-
-													 ])
-											 )
-									 )]),)
-				for letter in answer:
-						bot.value = bot.value +letter
-			
-						self.page.update()
-						sleep(0.03
-									)
-				
-				self.allmsg.controls.append(Container(height=2))
-			 
-				self.allmsg.update()
-
-		def delete(self,e):
-				self.allmsg.remove(e)
-				self.page.update()
-
-		def speak(self, e):
-
-				engine = pyttsx3.init()
-				voices = engine.getProperty('voices')
-				engine.setProperty('voice', voices[0].id)
-				engine.setProperty('rate', 140)
-				engine.say(self.answer)
-				engine.runAndWait()
-				print(self.question)
-
-		def close_clear_dlg(self, e):
-
-				self.clear_dialong.open = False
-				self.page.update()
-
-		def open_clear_dlg(self, e):
-				self.page.dialog = self.clear_dialong
-				self.clear_dialong.open = True
-				self.page.update()
-
-		def clear_chats(self, e):
-				self.allmsg.clean()
-				self.allmsg.update()
-				self.clear_dialong.open = False
-				self.page.update()
-
-		def change_langage(self, e):
-				self.allmsg.controls.append(
-						ft.Container(height=20)
-				)
-
-				self.allmsg.controls.append(
-						self.drop_down_language
-				)
-				self.allmsg.update()
-
-		def language_changed(self, e):
-				choosed_language = self.drop_down_language.value
-				if "English" in choosed_language:
-						self.langage = "en"
-
-				elif "Afrika" in choosed_language:
-						self.langage = "af"
-				elif "Swahili" in choosed_language:
-						self.langage = "sw"
-				elif "Albani" in choosed_language:
-						self.langage = "sq"
-				elif "Italian" in choosed_language:
-						self.langage = "it"
-				elif "Arabic" in choosed_language:
-						self.langage = "ar"
-				elif "Japan" in choosed_language:
-						self.langage = "ja"
-				elif "Azerba" in choosed_language:
-						self.langage = "az"
-				elif "Kannada" in choosed_language:
-						self.langage = "kn"
-				elif "Basque" in choosed_language:
-						self.langage = "eu"
-				elif "Korean" in choosed_language:
-						self.langage = "ko"
-				elif "Bengali" in choosed_language:
-						self.langage = "bn"
-				elif "Latin" in choosed_language:
-						self.langage = "la"
-				elif "Belarus" in choosed_language:
-						self.langage = "be"
-				elif "Latvian" in choosed_language:
-						self.langage = "iv"
-				elif "Bulgarian" in choosed_language:
-						self.langage = "bg"
-				elif "Lithuani" in choosed_language:
-						self.langage = "it"
-				elif "Catalan" in choosed_language:
-						self.langage = "ca"
-				elif "Macedo" in choosed_language:
-						self.langage = "mk"
-				elif "Simplified" in choosed_language:
-						self.langage = "zh-CN"
-				elif "Malay" in choosed_language:
-						self.langage = "ms"
-				elif "Traditi" in choosed_language:
-						self.langage = "zh-TW"
-				elif "Maltese" in choosed_language:
-						self.langage = "mt"
-				elif "Croatian" in choosed_language:
-						self.langage = "hr"
-				elif "Norwegian" in choosed_language:
-						self.langage = "no"
-				elif "Czech" in choosed_language:
-						self.langage = "cz"
-				elif "Persian" in choosed_language:
-						self.langage = "fa"
-				elif "Danish" in choosed_language:
-						self.langage = "da"
-				elif "Polish" in choosed_language:
-						self.langage = "pl"
-				elif "Dutch" in choosed_language:
-						self.langage = "nl"
-				elif "Portuguese" in choosed_language:
-						self.langage = "pt"
-				elif "Romanian" in choosed_language:
-						self.langage = "ro"
-				elif "Esperanto" in choosed_language:
-						self.langage = "eo"
-				elif "Russian" in choosed_language:
-						self.langage = "ru"
-				elif "Estonian" in choosed_language:
-						self.langage = "et"
-				elif "Serbian" in choosed_language:
-						self.langage = "sr"
-				elif "Filipino" in choosed_language:
-						self.langage = "tl"
-				elif "Slovak" in choosed_language:
-						self.langage = "sk"
-				elif "Finnish" in choosed_language:
-						self.langage = "fi"
-				elif "Slovenian" in choosed_language:
-						self.langage = "sl"
-				elif "French" in choosed_language:
-						self.langage = "fr"
-				elif "Spanish" in choosed_language:
-						self.langage = "es"
-				elif "Galician" in choosed_language:
-						self.langage = "gl"
-				elif "Georgian" in choosed_language:
-						self.langage = "ka"
-				elif "Swedish" in choosed_language:
-						self.langage = "sv"
-				elif "Greek" in choosed_language:
-						self.langage = "el"
-				elif "Tamil" in choosed_language:
-						self.langage = "ta"
-				elif "German" in choosed_language:
-						self.langage = "de"
-				elif "Slovak" in choosed_language:
-						self.langage = "sk"
-				elif "Telugu" in choosed_language:
-						self.langage = "te"
-				elif "Gujarati" in choosed_language:
-						self.langage = "gu"
-				elif "Thai" in choosed_language:
-						self.langage = "th"
-				elif "Haitian Creole" in choosed_language:
-						self.langage = "ht"
-				elif "Turkish" in choosed_language:
-						self.langage = "tr"
-				elif "Hebrew" in choosed_language:
-						self.langage = "iw"
-				elif "Hindi" in choosed_language:
-						self.langage = "hi"
-				elif "Urdu" in choosed_language:
-						self.langage = "ur"
-				elif "Hungarian" in choosed_language:
-						self.langage = "hu"
-				elif "Vietnamese" in choosed_language:
-						self.langage = "vi"
-				elif "Icelandic" in choosed_language:
-						self.langage = "is"
-				elif "Welsh" in choosed_language:
-						self.langage = "cy"
-				elif "Indonesian" in choosed_language:
-						self.langage = "id"
-				elif "Yiddish" in choosed_language:
-						self.langage = "yi"
-				self.allmsg.controls.remove(self.drop_down_language)
-				print(self.langage)
-				self.status.value = self.translator.translate(
-						"Online", dest=self.langage).text
-			 
-				self.about.value = self.translator.translate(
-						"Get answers to your questions as fast as possible",
-						 dest=self.langage).text
-				
-				self.fast_answer.value = self.translator.translate(
-						"Fast Answer",
-						 dest=self.langage).text
-				
-				self.message.hint_text = self.translator.translate(
-						"message",
-						 dest=self.langage).text
-				self.page.update()
-				self.allmsg.controls.append(
-						ft.Container(height=9)
-				)
-			 
-				
-				alter = self.translator.translate(
-						"Language change to"+choosed_language, dest=self.langage)
-				alter = alter.text
-				
-				self.allmsg.controls.append(
-						ft.Row(
-								alignment=ft.MainAxisAlignment.CENTER,
-								controls=[
-										ft.Container(
-												border_radius=15,
-												padding=padding.only(5, 0, 5, 0),
-												bgcolor="#33109f",
-												content=(
-														ft.Text(alter
-
-
-																		)
-												)
-										)
-								])
-				)
-				self.allmsg.controls.append(
-						ft.Container(height=20)
-				)
-				self.allmsg.update()
-			 
-
-		def Check_battery(self, e):
-				shd = ft.ShakeDetector(
-						minimum_shake_count=2,
-						shake_slop_time_ms=300,
-						shake_count_reset_time_ms=1000,
-						on_shake=lambda _: print("SHAKE DETECTED!"),
-				)
-				self.page.overlay.append(shd)
-		def enable_send_button(self,e):
-				
-				if len(self.message.value.replace(" ", "")) > 0:
-						self.send_button.disabled = False
-						self.send_button.icon_color = "white"
-						self.send_button.update()
-				else:
-						self.send_button.disabled = True
-						self.send_button.icon_color = "grey"
-						self.send_button.update()
-						print(len(self.message.value))
-		def homepage(self,e):
-				print("hey")
-				self.page.go("/community_chat")
-				self.page.update()
+import pyttsx3
+
+
+
+openai.api_key = "apikey"
+
+bg = '#444654'
+fg = '#202123'
+side_bar_width = 260
+
+
+class Main(UserControl):
+    def __init__(self, page: Page,):
+        page.padding = 0
+        page.title = 'KILEX'
+        page.theme_mode ="dark"
+       
+        page.update()
+        self.blinking = False
+        self.chat_response = ''
+        self.langage = "en"
+         
+        self.page = page
+        self. page.window_prevent_close = True
+      
+        
+        self.page.on_window_event = self.window_event
+   
+
+        self.transaltor =  googletrans.Translator()
+        self.prompt = [
+            {
+                "role": "system",
+                'content': 'As a large AI language model. You know almost everything. Your job is to provide solution / suggestion to problems.'
+            }
+        ]
+        self.init()
+
+    def init(self):
+        self.chat_gpt_label = Container(
+            padding=padding.only(top=120),
+            alignment=alignment.center,
+            content=Text(
+                value='KILEX',
+                size=35, weight=FontWeight.BOLD,
+            )
+        )
+        self.cursor = Container(
+            width=8, height=20, bgcolor='white', )
+        self.message_field = TextField(
+            border=InputBorder.NONE,
+            expand=True,
+            autofocus=True,
+            on_change=self.textfieledchanged,
+           
+            content_padding=0,
+            on_submit=self.send_clicked,
+            # max_lines=5,
+            # max_length=100,
+            # min_lines=5,
+
+
+        )
+        self.history_chats= Column(spacing=3,
+                                  scroll="auto",
+                                   auto_scroll=True,
+                                   expand=True
+                                   
+                                 )
+        self.drop_down_language = Dropdown(
+
+            height=65,
+            border_radius=10,
+            width=250,
+            border_color="white",
+            
+            hint_text="Choose languages",
+            bgcolor="yellow",
+         
+            hint_style=TextStyle(
+            color="white",
+            
+            ),
+            on_change=self.language_changed,
+            border_width=1,
+            focused_border_color="white",
+            helper_style=TextStyle(
+                color="white",
+              
+               size=10
+
+            ),
+         prefix_icon=ft.icons.LANGUAGE_ROUNDED,
+           
+
+
+            options=[
+                ft.dropdown.Option("English"),
+                ft.dropdown.Option("Swahili"),
+                ft.dropdown.Option("Afrikaans"),
+                ft.dropdown.Option("Albanian"),
+                ft.dropdown.Option("Italian"),
+                ft.dropdown.Option("Arabic"),
+                ft.dropdown.Option("Japanese"),
+                ft.dropdown.Option("Azerbaijani"),
+                ft.dropdown.Option("Kannada"),
+                ft.dropdown.Option("Basque"),
+                ft.dropdown.Option("Korean"),
+                ft.dropdown.Option("Bengali"),
+                ft.dropdown.Option("Latin"),
+                ft.dropdown.Option("Belarusian"),
+                ft.dropdown.Option("Latvian"),
+                ft.dropdown.Option("Bulgarian"),
+                ft.dropdown.Option("Lithuanian"),
+                ft.dropdown.Option("Catalan"),
+                ft.dropdown.Option("Macedonian"),
+                ft.dropdown.Option("Chinese Simplified"),
+                ft.dropdown.Option("Malay"),
+                ft.dropdown.Option("Malay"),
+                ft.dropdown.Option("Maltese"),
+                ft.dropdown.Option("Croatian"),
+                ft.dropdown.Option("Norwegian"),
+                ft.dropdown.Option("Czech"),
+                ft.dropdown.Option("Persian"),
+                ft.dropdown.Option("Danish"),
+                ft.dropdown.Option("Polish"),
+                ft.dropdown.Option("Dutch"),
+                ft.dropdown.Option("Portuguese"),
+                ft.dropdown.Option("Romanian"),
+                ft.dropdown.Option("Esperanto"),
+                ft.dropdown.Option("Russian"),
+                ft.dropdown.Option("Estonian"),
+                ft.dropdown.Option("Serbian"),
+                ft.dropdown.Option("Filipino"),
+                ft.dropdown.Option("Slovak"),
+                ft.dropdown.Option("Finnish"),
+                ft.dropdown.Option("Slovenian"),
+                ft.dropdown.Option("French"),
+                ft.dropdown.Option("Spanish"),
+                ft.dropdown.Option("Galician"),
+                ft.dropdown.Option("Georgian"),
+                ft.dropdown.Option("Swedish"),
+                ft.dropdown.Option("German"),
+                ft.dropdown.Option("Tamil"),
+                ft.dropdown.Option("Greek"),
+                ft.dropdown.Option("Telugu"),
+                ft.dropdown.Option("Gujarati"),
+                ft.dropdown.Option("Thai"),
+                ft.dropdown.Option("Haitian Creole"),
+                ft.dropdown.Option("Turkish"),
+                ft.dropdown.Option("Hebrew"),
+                ft.dropdown.Option("Ukrainian"),
+                ft.dropdown.Option("Hindi"),
+                ft.dropdown.Option("Urdu"),
+                ft.dropdown.Option("Hungarian"),
+                ft.dropdown.Option("Vietnamese"),
+                ft.dropdown.Option("Icelandic"),
+                ft.dropdown.Option("Welsh"),
+                ft.dropdown.Option("Indonesian"),
+                ft.dropdown.Option("Yiddish"),
+
+            ],
+        )
+        self.sendbutton= Container(
+                                                    on_click=self.send_clicked,
+                                                    disabled=True
+                                                    ,
+                                                  
+                                                    
+                                                    height=40,
+                                                    width=40,
+                                                  
+                                                    content=Icon(
+                                                        icons.SEND_ROUNDED,
+                                                         color ="#7A7A7A",
+                                                    ),
+                                                    on_hover=self.hover,
+                                                    border_radius=8
+
+                                                )
+        self.voicebutton= Container(
+                                                    on_click=self.speak,
+                                                   
+                                                   
+                                               
+                                                                                            
+                                                    height=40,
+                                                    width=40,
+                                                  
+                                                    content=Icon(
+                                                       icons.KEYBOARD_VOICE_ROUNDED,
+                                                         color ="#7A7A7A",
+                                                         tooltip="speak"
+                                                    ),
+                                                    on_hover=self.hover,
+                                                    border_radius=8
+
+                                                )
+  
+        self.side_bar = Container(
+            width=side_bar_width,
+            bgcolor=fg,
+            padding=8,
+            content=Column(
+                controls=[
+                    self.drop_down_language,
+
+                    Column(
+                       
+                      
+                        expand=True,
+
+                        controls=[
+
+                            Container(
+                                on_hover=self.hover,
+                                height=45,
+                                border_radius=8,
+
+                                padding=8,
+                                content=Row(
+                                    # spacing=14,
+                                    controls=[
+                                        Icon(
+                                            icons.CHAT_BUBBLE_OUTLINE_ROUNDED,
+                                            size=16,
+                                        ),
+                                        Text(
+                                            value='Conversation History',
+                                            weight=FontWeight.W_100,
+                                            width=200,
+                                            no_wrap=True,
+                                            size=16,
+
+                                        )
+                                    ]
+                                )
+
+                            ),
+                            self.history_chats
+
+                        ]
+                    ),
+
+                    # Container(height=0.2, bgcolor='#4d4d4f'),
+
+                    Divider(color='#4d4d4f', height=1),
+
+
+
+                    Container(
+                        on_hover=self.new_chat_hover,
+                        height=45,
+                        border_radius=8,
+                        on_click=self.clearchat,
+                        padding=8,
+                        content=Row(
+                            controls=[
+                                Icon(
+                                    icons.DELETE_OUTLINE_OUTLINED,
+                                    size=18,
+                                ),
+                                Text(
+                                    value='Clear conversations',
+                                    weight=FontWeight.W_100
+                                )
+                            ]
+                        )
+
+                    ),
+                    Container(
+                        on_hover=self.new_chat_hover,
+                        height=45,
+                        border_radius=8,
+                        padding=8,
+                        content=Row(
+                            alignment='spaceBetween',
+                            controls=[
+                                Row(
+                                      controls=[
+                                          Icon(
+                                              icons.PERSON_OUTLINE_OUTLINED,
+                                              size=18,
+                                          ),
+                                          Text(
+                                              value='Upgrade to Plus',
+                                              weight=FontWeight.W_100
+                                          ),
+                                      ]
+                                ),
+                                Container(
+                                    width=40, height=20, bgcolor='#fae69e', border_radius=5,
+                                    alignment=alignment.center,
+                                    content=Text(
+                                        'NEW', size=12, color=fg
+                                    )
+                                ),
+                            ]
+                        )
+
+                    ),
+                    Container(
+                        on_hover=self.new_chat_hover,
+                        height=45,
+                        border_radius=8,
+                        on_click=self.speak,
+                        padding=8,
+                        content=Row(
+                            controls=[
+                                Icon(
+                                    icons.OPEN_IN_NEW_OUTLINED,
+                                    size=18,
+                                ),
+                                Text(
+                                    value='Updates & FAQ',
+                                    weight=FontWeight.W_100
+                                ),
+                            ]
+                        )
+
+                    ),
+                    Container(
+                        on_hover=self.new_chat_hover,
+                        on_click=self.logout,
+                        height=45,
+                        border_radius=8,
+                        padding=8,
+                        content=Row(
+                            controls=[
+                                Icon(
+                                    icons.LOGOUT_OUTLINED,
+                                    size=18,
+                                ),
+                                Text(
+                                    value='Fast logout',
+                                    weight=FontWeight.W_100
+                                ),
+                            ]
+                        )
+
+                    ),
+
+                ]
+            ),
+        )
+        self.content_area = Column(
+            auto_scroll=True,
+            spacing=30,
+            scroll='auto',
+            controls=[
+                self.chat_gpt_label,
+                Row(
+                    alignment='center',
+                    controls=[
+                        Column(
+                            controls=[
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    content=Column(
+                                        horizontal_alignment='center',
+                                        controls=[
+                                            Icon(icons.BRIGHTNESS_7_OUTLINED),
+                                            Text('Examples')
+                                        ]
+                                    )
+                                ),
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    # height=100,
+                                    padding=padding.only(
+                                        top=20, bottom=30, left=20, right=20),
+                                    border_radius=8,
+                                    on_hover=self.hover2,
+                                    on_click=self.creative,
+                                    bgcolor='#3e3f4b',
+                                    content=Text(
+                                        '"Explain quantum computing in simple terms"',
+                                        text_align='center',
+                                    )
+                                ),
+
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    # height=100,
+                                    padding=padding.only(
+                                        top=20, bottom=30, left=20, right=20),
+                                    border_radius=8,
+                                    on_hover=self.hover2,
+                                    on_click=self.creative,
+                                    bgcolor='#3e3f4b',
+                                    content=Text(
+                                      value =  '"Got any creative ideas for a 10 year old\'s birthday?"',
+                                        text_align='center',
+                                    )
+                                ),
+
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    # height=100,
+                                    padding=padding.only(
+                                        top=20, bottom=30, left=20, right=20),
+                                    border_radius=8,
+                                    on_hover=self.hover2,
+                                    on_click=self.creative,
+                                    bgcolor='#3e3f4b',
+                                    content=Text(
+                                        '"How do I make an HTTP request in JavaScript?"',
+                                        text_align='center',
+                                    )
+                                ),
+
+                            ]
+                        ),
+                        Column(
+                            controls=[
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    content=Column(
+                                        horizontal_alignment='center',
+                                        controls=[
+                                            Icon(icons.FLASH_ON_OUTLINED),
+                                            Text('Capabilities')
+                                        ]
+                                    )
+                                ),
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    # height=100,
+                                    padding=padding.only(
+                                        top=20, bottom=30, left=20, right=20),
+                                    border_radius=8,
+                                    on_hover=self.hover2,
+                                    bgcolor='#3e3f4b',
+                                    content=Text(
+                                        'Remember what user said earlier in the conversation',
+                                        text_align='center',
+                                    )
+                                ),
+
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    # height=100,
+                                    padding=padding.only(
+                                        top=20, bottom=30, left=20, right=20),
+                                    border_radius=8,
+                                    on_hover=self.hover2,
+                                    bgcolor='#3e3f4b',
+                                    content=Text(
+                                        'Allows user to provide follow-up corrections',
+                                        text_align='center',
+                                    )
+                                ),
+
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    # height=100,
+                                    padding=padding.only(
+                                        top=20, bottom=30, left=20, right=20),
+                                    border_radius=8,
+                                    on_hover=self.hover2,
+                                    bgcolor='#3e3f4b',
+                                    content=Text(
+                                        'Trained to decline inappropriate requests',
+                                        text_align='center',
+                                    )
+                                ),
+
+                            ]
+                        ),
+                        Column(
+                            controls=[
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    content=Column(
+                                        horizontal_alignment='center',
+                                        controls=[
+                                            Icon(icons.DANGEROUS_OUTLINED),
+                                            Text('Limitations')
+                                        ]
+                                    )
+                                ),
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    # height=100,
+                                    padding=padding.only(
+                                        top=20, bottom=30, left=20, right=20),
+                                    border_radius=8,
+                                    on_hover=self.hover2,
+                                    bgcolor='#3e3f4b',
+                                    content=Text(
+                                        'May occationally generate incorrect information',
+                                        text_align='center',
+                                    )
+                                ),
+
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    # height=100,
+                                    padding=padding.only(
+                                        top=20, bottom=30, left=20, right=20),
+                                    border_radius=8,
+                                    on_hover=self.hover2,
+                                    bgcolor='#3e3f4b',
+                                    content=Text(
+                                        'May occasionally produce harmful instruction or biased content',
+                                        text_align='center',
+                                    )
+                                ),
+
+                                Container(
+                                    alignment=alignment.center,
+                                    width=250,
+                                    # height=100,
+                                    padding=padding.only(
+                                        top=20, bottom=30, left=20, right=20),
+                                    border_radius=8,
+                                    on_hover=self.hover2,
+                                    bgcolor='#3e3f4b',
+                                    content=Text(
+                                        'Limited knowledge of world and events after 2021',
+                                        text_align='center',
+                                    )
+                                ),
+
+                            ]
+                        ),
+                    ]
+                ),
+               
+
+
+
+            ]
+        )
+        self.textfieldrow = Row(
+                                            controls=[
+             self.voicebutton,
+                                                self.message_field,
+                                               self.sendbutton
+                                                
+                                            ]
+                                        )
+        self.main_content = Container(
+            padding=padding.only(top=20,),
+            expand=True,
+            bgcolor=bg,
+            content=Column(
+                alignment='spaceBetween',
+                horizontal_alignment='center',
+                controls=[
+                    Container(
+                        width=1000,
+                        expand=True,
+                        content=self.content_area
+
+
+                    ),
+
+                    Container(
+                        margin=margin.only(top=30),
+                        height=100,
+                        content=Column(
+                            horizontal_alignment='center',
+                            spacing=0,
+                            controls=[
+                                Card(
+                                    elevation=5,
+                                    content=Container(
+                                        border_radius=10,
+                                        bgcolor='#40414f',
+                                        padding=padding.only(
+                                            top=5, right=4, left=10, bottom=5),
+                                        height=50,
+                                        width=1000,
+                                        content=self.textfieldrow,
+                                    )
+                                ),
+                                Row(
+                                    expand=True,
+                                    controls=[
+                                        Text(
+                                            expand=True,
+                                            value='This is running on free plan. Created by @Kilex (Baraka Kileo)',
+                                            text_align='center'
+                                        )
+                                    ]
+                                )
+                            ]
+                        )
+
+
+                    ),
+
+                ]
+            )
+
+
+        )
+
+        self.page.add(
+            Container(
+                expand=True,
+                bgcolor=bg,
+                content=Row(
+                    spacing=0,
+                    controls=[
+                        self.side_bar,
+                        self.main_content,
+                    ]
+                )
+
+            )
+        )
+
+    def new_chat_hover(self, e: HoverEvent):
+        if e.data == 'true':
+            e.control.bgcolor = '#2b2c2f'
+        else:
+            e.control.bgcolor = None
+        e.control.update()
+
+    def hover(self, e):
+        if e.data == 'true':
+            e.control.bgcolor = '#2a2b32'
+        else:
+            e.control.bgcolor = None
+        e.control.update()
+
+    def hover2(self, e):
+        if e.data == 'true':
+            e.control.bgcolor = '#2a2b32'
+        else:
+            e.control.bgcolor = '#3e3f4b'
+        e.control.update()
+
+    def send_clicked(self, e: TapEvent):        
+        self.sendbutton.disabled = True
+        self.sendbutton.content.color ="#7A7A7A" 
+        self.sendbutton.update()
+        message = self.message_field.value
+        if int(len(self.message_field.value.replace(' ', "")) > 0):
+            self.message_field.value = ''
+            self.message_field.update()
+
+            if self.chat_gpt_label in self.content_area.controls:
+                self.content_area.controls.clear()
+                self.content_area.update()
+
+            gpt_message = Row(
+                vertical_alignment='center',
+                controls=[
+                    Container(
+                        height=35, width=35,
+                      
+                        
+                        content=Image(src="assets/chatgpt.png")
+
+                    ),
+                    self.cursor
+                ]
+            )
+
+            response_label = Text('', expand=True, size=16,
+                                  
+                                  selectable=True)
+                                  
+            if self.blinking is False:
+                self.blinking = True
+
+                self.content_area.controls.append(
+                    Container(
+                        bgcolor='#343541',
+                        padding=padding.only(
+                                top=20, bottom=60, left=20, right=20
+                        ),
+                        content=Row(
+                            controls=[
+                                Container(
+                                    border_radius=8,
+                                    clip_behavior=ClipBehavior.ANTI_ALIAS,
+                                    height=35, width=35,
+                                    content=Image(
+                                        src='https://cdn-icons-png.flaticon.com/512/1698/1698535.png',
+                                        fit=ImageFit.COVER,
+                                    )
+
+                                ),
+                                Text(
+                                    message,
+                                    expand=True,
+                                    size=16,
+                                    selectable=True
+                                )
+                            ]
+                        )
+                    )
+
+                )
+                self.content_area.update()
+
+                sleep(.1)
+
+                self.content_area.controls.append(
+                    Container(
+                        padding=padding.only(
+                            top=20, bottom=10, left=20, right=20),
+
+                        content=gpt_message
+                    ),
+                )
+                self.content_area.update()
+
+                
+
+                chat_response = self.call_chatgpt(message)
+
+                self.blinking = False
+                sleep(0.4)
+                self.blinking = True
+                if self.cursor in gpt_message.controls:
+                    gpt_message.controls.remove(self.cursor)
+                    gpt_message.update()
+                if response_label not in gpt_message.controls:
+                    gpt_message.controls.append(response_label)
+                    gpt_message.vertical_alignment = 'start'
+                    gpt_message.update()
+                    for char in chat_response:
+                        response_label.value += char
+                        response_label.update()
+                        sleep(0.02)
+                self.content_area.controls.append(Container(height=1))
+                self.content_area.update()
+                self.blinking = False
+                self.sendbutton.disabled = True
+                self.sendbutton.content.color = "#7A7A7A"
+                self.sendbutton.update()
+                
+
+    def call_chatgpt(self, text):
+        self.history_chats.controls.append(
+                    Container(
+                                on_hover=self.hover,
+                                height=45,
+                                border_radius=8,
+              
+                                on_click=self.history,
+
+
+                                padding=8,
+                                content=Row(
+                                    # spacing=14,
+                                    controls=[
+                                        Icon(
+                                            icons.CHAT_BUBBLE_OUTLINE_ROUNDED,
+                                            size=16,
+                                        ),
+                                        Text(
+                                            value=text,
+                                            weight=FontWeight.W_100,
+                                            width=200,
+                                            no_wrap=True,
+                                            size=16,
+
+                                        )
+                                    ]
+                                )
+
+                            )
+                    )
+        self.history_chats.update()
+        self.prompt.append(
+            {
+                "role": "user",
+                "content": text
+            }
+        )
+
+        translator = googletrans.Translator()
+        
+        text = translator.translate(text,dest="en").text
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=text,
+            temperature=0.7,
+            max_tokens=3000,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
+        )
+        self.responce = response.choices[0].text
+        finalresponse = translator.translate(response.choices[0].text,dest=self.langage)
+        chat_response = finalresponse.text
+       
+       
+        self.voicebutton.content.color = "white"
+        self.voicebutton.content.disabled = False
+        self.voicebutton.update()
+
+        self.prompt.append(
+            {
+                'role': 'assistant',
+                'content': chat_response
+            }
+        )
+        return chat_response
+        
+    def blink(self,):
+        while True:
+            if self.blinking == False:
+                break
+            if self.cursor.opacity == 100:
+                self.cursor.opacity = 0
+            else:
+                self.cursor.opacity = 100
+            self.cursor.update()
+
+            sleep(.4)
+    def clearchat(self,e):  
+        self.content_area.clean()
+        self.history_chats.clean()
+        self.content_area.update()
+        self.history_chats.update()
+        
+    def speak(self, e):
+        engine = pyttsx3.init()
+        voices = engine.getProperty('voices')
+        engine.setProperty("voice",voices[1].id)
+        engine.setProperty("rate",140)
+        engine.say(self.responce)
+        engine.runAndWait()
+
+		
+		
+    
+    def creative(self,e): 
+        self.sendbutton.disabled =  False
+        self.sendbutton.content.color = "white"    
+        self.sendbutton.update()     
+        t =  e.control.content.value    
+        self.message_field.value = t.replace('''"''', " ")
+        self.message_field.update()
+        self.page.update()
+    def history(self,e):
+        e.control.content.controls[1].value
+        print(e.control.content.controls[1].value)
+        value =  e.control.content.controls[1].value
+        self.message_field.value =  value
+        self.sendbutton.disabled =  False
+        self.sendbutton.content.color = "white"
+        self.sendbutton.update()
+      
+        self.message_field.update()
+    def newchat(self,e):
+        self.content_area.update()
+       
+    def language_changed(self, e):
+        choosed_language = self.drop_down_language.value
+        if "English" in choosed_language:
+            self.langage = "en"
+        elif "Afrika" in choosed_language:
+            self.langage = "af"
+        elif "Swahili" in choosed_language:
+            self.langage = "sw"
+        elif "Albani" in choosed_language:
+            self.langage = "sq"
+        elif "Italian" in choosed_language:
+            self.langage = "it"
+        elif "Arabic" in choosed_language:
+            self.langage = "ar"
+        elif "Japan" in choosed_language:
+            self.langage = "ja"
+        elif "Azerba" in choosed_language:
+            self.langage = "az"
+        elif "Kannada" in choosed_language:
+            self.langage = "kn"
+        elif "Basque" in choosed_language:
+            self.langage = "eu"
+        elif "Korean" in choosed_language:
+            self.langage = "ko"
+        elif "Bengali" in choosed_language:
+            self.langage = "bn"
+        elif "Latin" in choosed_language:
+            self.langage = "la"
+        elif "Belarus" in choosed_language:
+            self.langage = "be"
+        elif "Latvian" in choosed_language:
+            self.langage = "iv"
+        elif "Bulgarian" in choosed_language:
+            self.langage = "bg"
+        elif "Lithuani" in choosed_language:
+            self.langage = "it"
+        elif "Catalan" in choosed_language:
+            self.langage = "ca"
+        elif "Macedo" in choosed_language:
+            self.langage = "mk"
+        elif "Simplified" in choosed_language:
+            self.langage = "zh-CN"
+        elif "Malay" in choosed_language:
+            self.langage = "ms"
+        elif "Traditi" in choosed_language:
+            self.langage = "zh-TW"
+        elif "Maltese" in choosed_language:
+            self.langage = "mt"
+        elif "Croatian" in choosed_language:
+            self.langage = "hr"
+        elif "Norwegian" in choosed_language:
+            self.langage = "no"
+        elif "Czech" in choosed_language:
+            self.langage = "cz"
+        elif "Persian" in choosed_language:
+            self.langage = "fa"
+        elif "Danish" in choosed_language:
+            self.langage = "da"
+        elif "Polish" in choosed_language:
+            self.langage = "pl"
+        elif "Dutch" in choosed_language:
+            self.langage = "nl"
+        elif "Portuguese" in choosed_language:
+            self.langage = "pt"
+        elif "Romanian" in choosed_language:
+            self.langage = "ro"
+        elif "Esperanto" in choosed_language:
+            self.langage = "eo"
+        elif "Russian" in choosed_language:
+            self.langage = "ru"
+        elif "Estonian" in choosed_language:
+            self.langage = "et"
+        elif "Serbian" in choosed_language:
+            self.langage = "sr"
+        elif "Filipino" in choosed_language:
+            self.langage = "tl"
+        elif "Slovak" in choosed_language:
+            self.langage = "sk"
+        elif "Finnish" in choosed_language:
+            self.langage = "fi"
+        elif "Slovenian" in choosed_language:
+            self.langage = "sl"
+        elif "French" in choosed_language:
+            self.langage = "fr"
+        elif "Spanish" in choosed_language:
+            self.langage = "es"
+        elif "Galician" in choosed_language:
+            self.langage = "gl"
+        elif "Georgian" in choosed_language:
+            self.langage = "ka"
+        elif "Swedish" in choosed_language:
+            self.langage = "sv"
+        elif "Greek" in choosed_language:
+            self.langage = "el"
+        elif "Tamil" in choosed_language:
+            self.langage = "ta"
+        elif "German" in choosed_language:
+            self.langage = "de"
+        elif "Slovak" in choosed_language:
+            self.langage = "sk"
+        elif "Telugu" in choosed_language:
+            self.langage = "te"
+        elif "Gujarati" in choosed_language:
+            self.langage = "gu"
+        elif "Thai" in choosed_language:
+            self.langage = "th"
+        elif "Haitian Creole" in choosed_language:
+            self.langage = "ht"
+        elif "Turkish" in choosed_language:
+            self.langage = "tr"
+        elif "Hebrew" in choosed_language:
+            self.langage = "iw"
+        elif "Hindi" in choosed_language:
+            self.langage = "hi"
+        elif "Urdu" in choosed_language:
+            self.langage = "ur"
+        elif "Hungarian" in choosed_language:
+            self.langage = "hu"
+        elif "Vietnamese" in choosed_language:
+            self.langage = "vi"
+        elif "Icelandic" in choosed_language:
+            self.langage = "is"
+        elif "Welsh" in choosed_language:
+            self.langage = "cy"
+        elif "Indonesian" in choosed_language:
+            self.langage = "id"
+        elif "Yiddish" in choosed_language:
+            self.langage = "yi"
+        notification.notify(title = "Kilex",message ="You changed language to " +choosed_language ,timeout=5)
+        self.page.update()
+
+    
+    def  textfieledchanged(self,e):
+        if int(len(self.message_field.value.replace(' ', "")) > 0):
+           self.sendbutton.disabled =  False
+           self.sendbutton.content.color = "white"
+           self.sendbutton.update()
+        else:
+            self.sendbutton.disabled = True
+            self.sendbutton.content.color ="#7A7A7A"
+            self.sendbutton.update()
+
+    def yes_click(self,e):
+        self.page.window_destroy()
+
+    def no_click(self,e):
+        self.confirm_dialog.open = False
+        self.page.update()
+
+    def window_event(self,e):
+        self.confirm_dialog = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Please confirm"),
+        content=ft.Text("Do you really want to exit this app?"),
+        actions=[
+            ft.ElevatedButton("Yes", on_click=self.yes_click,color="red"),
+            ft.ElevatedButton("No", on_click=self.no_click,color="white"),
+        ],
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
+        if e.data == "close":
+            self.page.dialog = self.confirm_dialog
+            self.confirm_dialog.open = True
+            self.page.update()
+    def logout(self,e):
+        self.page.window_destroy()
+app(target=Main, view=WEB_BROWSER,assets_dir="assets",)
